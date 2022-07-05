@@ -4,6 +4,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/Alterra-DataOn-Kelompok-5/room-service/database"
+	"github.com/Alterra-DataOn-Kelompok-5/room-service/database/migration"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 )
@@ -17,6 +19,8 @@ func init() {
 }
 
 func main() {
+	database.CreateConnection()
+	migration.Migrate()
 	e := echo.New()
 	log.Fatal(e.Start(":" + os.Getenv("SERVICE_PORT")))
 }
