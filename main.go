@@ -34,5 +34,9 @@ func main() {
 	rtu := usecase.NewRoomTypesUsecase(roomTypeRepo)
 	http.NewRoomTypesHandler(e, rtu)
 
+	roomRepo := repository.NewMysqlRoomsRepository(database.GetConnection())
+	ru := usecase.NewRoomsUsecase(roomRepo)
+	http.NewRoomsHandler(e, ru)
+
 	log.Fatal(e.Start(":" + os.Getenv("SERVICE_PORT")))
 }
