@@ -6,10 +6,16 @@ import (
 
 	"github.com/Alterra-DataOn-Kelompok-5/room-service/database"
 	"github.com/Alterra-DataOn-Kelompok-5/room-service/database/migration"
-	"github.com/Alterra-DataOn-Kelompok-5/room-service/delivery/http"
 	"github.com/Alterra-DataOn-Kelompok-5/room-service/middleware"
-	"github.com/Alterra-DataOn-Kelompok-5/room-service/repository"
-	"github.com/Alterra-DataOn-Kelompok-5/room-service/usecase"
+
+	_roomTypesHttp "github.com/Alterra-DataOn-Kelompok-5/room-service/room_types/delivery/http"
+	_roomTypesRepo "github.com/Alterra-DataOn-Kelompok-5/room-service/room_types/repository"
+	_roomTypesUc "github.com/Alterra-DataOn-Kelompok-5/room-service/room_types/usecase"
+
+	_roomsHttp "github.com/Alterra-DataOn-Kelompok-5/room-service/rooms/delivery/http"
+	_roomsRepo "github.com/Alterra-DataOn-Kelompok-5/room-service/rooms/repository"
+	_roomsUc "github.com/Alterra-DataOn-Kelompok-5/room-service/rooms/usecase"
+
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 )
@@ -30,13 +36,13 @@ func main() {
 
 	middleware.Init(e)
 
-	roomTypeRepo := repository.NewMysqlRoomTypesRepository(database.GetConnection())
-	rtu := usecase.NewRoomTypesUsecase(roomTypeRepo)
-	http.NewRoomTypesHandler(e, rtu)
+	roomTypeRepo := _roomTypesRepo.NewMysqlRoomTypesRepository(database.GetConnection())
+	rtu := _roomTypesUc.NewRoomTypesUsecase(roomTypeRepo)
+	_roomTypesHttp.NewRoomTypesHandler(e, rtu)
 
-	roomRepo := repository.NewMysqlRoomsRepository(database.GetConnection())
-	ru := usecase.NewRoomsUsecase(roomRepo)
-	http.NewRoomsHandler(e, ru)
+	roomRepo := _roomsRepo.NewMysqlRoomsRepository(database.GetConnection())
+	ru := _roomsUc.NewRoomsUsecase(roomRepo)
+	_roomsHttp.NewRoomsHandler(e, ru)
 
 	log.Fatal(e.Start(":" + os.Getenv("SERVICE_PORT")))
 }
