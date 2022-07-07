@@ -31,7 +31,12 @@ func (rh *RoomsHandler) FetchAllRooms(c echo.Context) error {
 
 func (rh *RoomsHandler) FetchRoomByID(c echo.Context) error {
 	id, _ := strconv.Atoi(c.Param("id"))
-	rooms, _ := rh.RoomsUsecase.FetchByID(c.Request().Context(), id)
+
+	rooms, err := rh.RoomsUsecase.FetchByID(c.Request().Context(), id)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, err.Error())
+	}
+
 	return c.JSON(http.StatusOK, rooms)
 }
 
