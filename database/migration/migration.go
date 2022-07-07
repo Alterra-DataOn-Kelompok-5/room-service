@@ -7,9 +7,8 @@ import (
 
 var tables = []interface{}{
 	&domain.RoomTypes{},
-	&domain.Rooms{},
 	&domain.RoomLocations{},
-	&domain.RoomDescriptions{},
+	&domain.Rooms{},
 }
 
 func Migrate() {

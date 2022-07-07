@@ -6,9 +6,9 @@ import (
 
 type RoomTypes struct {
 	Model
-	RoomTypeName     string `json:"room_name"`
-	RoomTypeCapacity int    `json:"room_type_capacity"`
-	RoomTypeDesc     string `json:"room_type_desc" gorm:"type:text"`
+	RoomTypeName        string `json:"room_name"`
+	RoomTypeMaxCapacity int    `json:"room_type_max_capacity"`
+	RoomTypeDesc        string `json:"room_type_desc" gorm:"type:text"`
 }
 
 type RoomTypesUsecase interface {

@@ -6,10 +6,8 @@ import (
 
 type RoomLocations struct {
 	Model
-	RoomLocationName string `json:"room_location"`
-	RoomFloor        string `json:"room_floor"`
-	RoomID           int    `json:"room_id"`
-	Rooms            Rooms  `json:"rooms" gorm:"foreignKey:RoomID;references:ID"`
+	RoomLocationName string `json:"room_location_name"`
+	RoomLocationDesc string `json:"room_location_desc"`
 }
 
 type RoomLocationsUsecase interface {
