@@ -12,6 +12,10 @@ import (
 	_roomTypesRepo "github.com/Alterra-DataOn-Kelompok-5/room-service/room_types/repository"
 	_roomTypesUc "github.com/Alterra-DataOn-Kelompok-5/room-service/room_types/usecase"
 
+	_roomLocationsHttp "github.com/Alterra-DataOn-Kelompok-5/room-service/room_locations/delivery/http"
+	_roomLocationsRepo "github.com/Alterra-DataOn-Kelompok-5/room-service/room_locations/repository"
+	_roomLocationsUc "github.com/Alterra-DataOn-Kelompok-5/room-service/room_locations/usecase"
+
 	_roomsHttp "github.com/Alterra-DataOn-Kelompok-5/room-service/rooms/delivery/http"
 	_roomsRepo "github.com/Alterra-DataOn-Kelompok-5/room-service/rooms/repository"
 	_roomsUc "github.com/Alterra-DataOn-Kelompok-5/room-service/rooms/usecase"
@@ -39,6 +43,10 @@ func main() {
 	roomTypeRepo := _roomTypesRepo.NewMysqlRoomTypesRepository(database.GetConnection())
 	rtu := _roomTypesUc.NewRoomTypesUsecase(roomTypeRepo)
 	_roomTypesHttp.NewRoomTypesHandler(e, rtu)
+
+	roomLocationRepo := _roomLocationsRepo.NewMysqlRoomLocationsRepository(database.GetConnection())
+	rlu := _roomLocationsUc.NewRoomLocationsUsecase(roomLocationRepo)
+	_roomLocationsHttp.NewRoomsHandler(e, rlu)
 
 	roomRepo := _roomsRepo.NewMysqlRoomsRepository(database.GetConnection())
 	ru := _roomsUc.NewRoomsUsecase(roomRepo)
