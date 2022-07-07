@@ -11,7 +11,7 @@ type Rooms struct {
 	RoomTypeID     int           `json:"room_type_id"`
 	RoomTypes      RoomTypes     `json:"room_types" gorm:"foreignKey:RoomTypeID;references:ID"`
 	RoomLocationID int           `json:"room_location_id"`
-	RoomLocation   RoomLocations `json:"room_locations" gorm:"foreignKey:RoomLocationID;references:ID"`
+	RoomLocations  RoomLocations `json:"room_locations" gorm:"foreignKey:RoomLocationID;references:ID"`
 }
 
 type RoomsUsecase interface {
