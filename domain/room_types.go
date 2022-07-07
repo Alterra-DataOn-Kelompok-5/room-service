@@ -6,7 +6,7 @@ import (
 
 type RoomTypes struct {
 	Model
-	RoomTypeName        string `json:"room_name"`
+	RoomTypeName        string `json:"room_type_name"`
 	RoomTypeMaxCapacity int    `json:"room_type_max_capacity"`
 	RoomTypeDesc        string `json:"room_type_desc" gorm:"type:text"`
 }
