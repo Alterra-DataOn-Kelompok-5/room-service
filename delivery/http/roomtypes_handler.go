@@ -31,7 +31,15 @@ func (rth *RoomTypesHandler) FetchAllRoomTypes(c echo.Context) error {
 
 func (rth *RoomTypesHandler) FetchRoomTypeByID(c echo.Context) error {
 	id, _ := strconv.Atoi(c.Param("id"))
-	roomTypes, _ := rth.RoomTypesUsecase.FetchByID(c.Request().Context(), id)
+
+	roomTypes, err := rth.RoomTypesUsecase.FetchByID(c.Request().Context(), id)
+	if err != nil {
+		if err.Error() == "record not found" {
+			return c.JSON(http.StatusNotFound, err.Error())
+		}
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+
 	return c.JSON(http.StatusOK, roomTypes)
 }
 

@@ -34,7 +34,10 @@ func (rh *RoomsHandler) FetchRoomByID(c echo.Context) error {
 
 	rooms, err := rh.RoomsUsecase.FetchByID(c.Request().Context(), id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err.Error())
+		if err.Error() == "record not found" {
+			return c.JSON(http.StatusNotFound, err.Error())
+		}
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, rooms)
