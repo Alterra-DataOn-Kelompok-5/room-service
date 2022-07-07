@@ -7,6 +7,7 @@ import (
 	"github.com/Alterra-DataOn-Kelompok-5/room-service/database"
 	"github.com/Alterra-DataOn-Kelompok-5/room-service/database/migration"
 	"github.com/Alterra-DataOn-Kelompok-5/room-service/delivery/http"
+	"github.com/Alterra-DataOn-Kelompok-5/room-service/middleware"
 	"github.com/Alterra-DataOn-Kelompok-5/room-service/repository"
 	"github.com/Alterra-DataOn-Kelompok-5/room-service/usecase"
 	"github.com/joho/godotenv"
@@ -26,6 +27,8 @@ func main() {
 	migration.Migrate()
 
 	e := echo.New()
+
+	middleware.Init(e)
 
 	roomTypeRepo := repository.NewMysqlRoomTypesRepository(database.GetConnection())
 	rtu := usecase.NewRoomTypesUsecase(roomTypeRepo)
