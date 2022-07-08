@@ -49,7 +49,7 @@ func main() {
 	_roomLocationsHttp.NewRoomsHandler(e, rlu)
 
 	roomRepo := _roomsRepo.NewMysqlRoomsRepository(database.GetConnection())
-	ru := _roomsUc.NewRoomsUsecase(roomRepo)
+	ru := _roomsUc.NewRoomsUsecase(roomRepo, roomTypeRepo, roomLocationRepo)
 	_roomsHttp.NewRoomsHandler(e, ru)
 
 	log.Fatal(e.Start(":" + os.Getenv("SERVICE_PORT")))
