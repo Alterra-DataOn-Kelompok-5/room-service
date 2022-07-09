@@ -17,11 +17,13 @@ func NewRoomTypesHandler(e *echo.Echo, rtu domain.RoomTypesUsecase) {
 		RoomTypesUsecase: rtu,
 	}
 
-	e.GET("/types", handler.FetchAllRoomTypes)
-	e.GET("/types/:id", handler.FetchRoomTypeByID)
-	e.POST("/types", handler.CreateRoomType)
-	e.PUT("/types/:id", handler.UpdateRoomType)
-	e.DELETE("/types/:id", handler.DeleteRoomType)
+	g := e.Group("/api/v1")
+
+	g.GET("/types", handler.FetchAllRoomTypes)
+	g.GET("/types/:id", handler.FetchRoomTypeByID)
+	g.POST("/types", handler.CreateRoomType)
+	g.PUT("/types/:id", handler.UpdateRoomType)
+	g.DELETE("/types/:id", handler.DeleteRoomType)
 }
 
 func (rth *RoomTypesHandler) FetchAllRoomTypes(c echo.Context) error {
