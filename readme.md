@@ -1,7 +1,7 @@
-# Meeting Room Management - Employee Service
+# Meeting Room Management - Room Service
 
 ## Entities/Domain
 
-- Division
-- Role
-- Employee
+- Room Types
+- Room Locations
+- Rooms
