@@ -17,6 +17,7 @@ type RoomLocations interface {
 	Edit(ctx context.Context, oldRoomLocation *model.RoomLocations, updateData *dto.UpdateRoomLocationsRequestBody) (*model.RoomLocations, error)
 	Destroy(ctx context.Context, roomLocation *model.RoomLocations) (*model.RoomLocations, error)
 	ExistByName(ctx context.Context, name string) (bool, error)
+	ExistByID(ctx context.Context, id uint) (bool, error)
 }
 
 type roomLocation struct {
@@ -97,6 +98,20 @@ func (r *roomLocation) ExistByName(ctx context.Context, name string) (bool, erro
 		isExist bool
 	)
 	if err := r.Db.WithContext(ctx).Model(&model.RoomLocations{}).Where("room_location_name = ?", name).Count(&count).Error; err != nil {
+		return isExist, err
+	}
+	if count > 0 {
+		isExist = true
+	}
+	return isExist, nil
+}
+
+func (r *roomLocation) ExistByID(ctx context.Context, id uint) (bool, error) {
+	var (
+		count   int64
+		isExist bool
+	)
+	if err := r.Db.WithContext(ctx).Model(&model.RoomLocations{}).Where("id = ?", id).Count(&count).Error; err != nil {
 		return isExist, err
 	}
 	if count > 0 {

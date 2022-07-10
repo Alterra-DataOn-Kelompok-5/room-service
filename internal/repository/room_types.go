@@ -17,6 +17,7 @@ type RoomTypes interface {
 	Edit(ctx context.Context, oldRoomTypes *model.RoomTypes, updateData *dto.UpdateRoomTypesRequestBody) (*model.RoomTypes, error)
 	Destroy(ctx context.Context, roomTypes *model.RoomTypes) (*model.RoomTypes, error)
 	ExistByName(ctx context.Context, name string) (bool, error)
+	ExistByID(ctx context.Context, id uint) (bool, error)
 }
 
 type roomTypes struct {
@@ -99,6 +100,20 @@ func (r *roomTypes) ExistByName(ctx context.Context, name string) (bool, error) 
 		isExist bool
 	)
 	if err := r.Db.WithContext(ctx).Model(&model.RoomTypes{}).Where("room_type_name = ?", name).Count(&count).Error; err != nil {
+		return isExist, err
+	}
+	if count > 0 {
+		isExist = true
+	}
+	return isExist, nil
+}
+
+func (r *roomTypes) ExistByID(ctx context.Context, id uint) (bool, error) {
+	var (
+		count   int64
+		isExist bool
+	)
+	if err := r.Db.WithContext(ctx).Model(&model.RoomTypes{}).Where("id = ?", id).Count(&count).Error; err != nil {
 		return isExist, err
 	}
 	if count > 0 {

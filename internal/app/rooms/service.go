@@ -13,7 +13,9 @@ import (
 )
 
 type service struct {
-	RoomsRepository repository.Rooms
+	RoomsRepository         repository.Rooms
+	RoomTypesRepository     repository.RoomTypes
+	RoomLocationsRepository repository.RoomLocations
 }
 
 type Service interface {
@@ -26,7 +28,9 @@ type Service interface {
 
 func NewService(f *factory.Factory) Service {
 	return &service{
-		RoomsRepository: f.RoomsRepository,
+		RoomsRepository:         f.RoomsRepository,
+		RoomTypesRepository:     f.RoomTypesRepository,
+		RoomLocationsRepository: f.RoomLocationsRepository,
 	}
 }
 
@@ -103,7 +107,23 @@ func (s *service) Store(ctx context.Context, payload *dto.CreateRoomsRequestBody
 		return &dto.RoomsDetailResponse{}, res.ErrorBuilder(&res.ErrorConstant.InternalServerError, err)
 	}
 	if isExist {
-		return &dto.RoomsDetailResponse{}, res.ErrorBuilder(&res.ErrorConstant.Duplicate, errors.New("room type already exists"))
+		return &dto.RoomsDetailResponse{}, res.ErrorBuilder(&res.ErrorConstant.Duplicate, errors.New("room already exists"))
+	}
+
+	isRoomTypeActive, err := s.RoomTypesRepository.ExistByID(ctx, *payload.RoomTypeID)
+	if err != nil {
+		return &dto.RoomsDetailResponse{}, res.ErrorBuilder(&res.ErrorConstant.InternalServerError, err)
+	}
+	if !isRoomTypeActive {
+		return &dto.RoomsDetailResponse{}, res.CustomErrorBuilder(res.ErrorConstant.NotFound.Code, res.E_NOT_FOUND, "Room type not found")
+	}
+
+	isRoomLocationActive, err := s.RoomLocationsRepository.ExistByID(ctx, *payload.RoomLocationID)
+	if err != nil {
+		return &dto.RoomsDetailResponse{}, res.ErrorBuilder(&res.ErrorConstant.InternalServerError, err)
+	}
+	if !isRoomLocationActive {
+		return &dto.RoomsDetailResponse{}, res.CustomErrorBuilder(res.ErrorConstant.NotFound.Code, res.E_NOT_FOUND, "Room location not found")
 	}
 
 	data, err := s.RoomsRepository.Save(ctx, payload)
@@ -148,6 +168,22 @@ func (s *service) UpdateById(ctx context.Context, payload *dto.UpdateRoomsReques
 			return &dto.RoomsDetailResponse{}, res.ErrorBuilder(&res.ErrorConstant.NotFound, err)
 		}
 		return &dto.RoomsDetailResponse{}, res.ErrorBuilder(&res.ErrorConstant.InternalServerError, err)
+	}
+
+	isRoomTypeActive, err := s.RoomTypesRepository.ExistByID(ctx, *payload.RoomTypeID)
+	if err != nil {
+		return &dto.RoomsDetailResponse{}, res.ErrorBuilder(&res.ErrorConstant.InternalServerError, err)
+	}
+	if !isRoomTypeActive {
+		return &dto.RoomsDetailResponse{}, res.CustomErrorBuilder(res.ErrorConstant.NotFound.Code, res.E_NOT_FOUND, "Room type not found")
+	}
+
+	isRoomLocationActive, err := s.RoomLocationsRepository.ExistByID(ctx, *payload.RoomLocationID)
+	if err != nil {
+		return &dto.RoomsDetailResponse{}, res.ErrorBuilder(&res.ErrorConstant.InternalServerError, err)
+	}
+	if !isRoomLocationActive {
+		return &dto.RoomsDetailResponse{}, res.CustomErrorBuilder(res.ErrorConstant.NotFound.Code, res.E_NOT_FOUND, "Room location not found")
 	}
 
 	_, err = s.RoomsRepository.Edit(ctx, &room, payload)

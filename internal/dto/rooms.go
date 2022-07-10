@@ -10,15 +10,15 @@ type (
 	CreateRoomsRequestBody struct {
 		RoomName       *string `json:"room_name" validate:"required"`
 		RoomDesc       *string `json:"room_desc" validate:"omitempty"`
-		RoomTypeID     *int    `json:"room_type_id" validate:"omitempty"`
-		RoomLocationID *int    `json:"room_location_id" validate:"omitempty"`
+		RoomTypeID     *uint   `json:"room_type_id" validate:"omitempty"`
+		RoomLocationID *uint   `json:"room_location_id" validate:"omitempty"`
 	}
 	UpdateRoomsRequestBody struct {
 		ID             *uint   `param:"id" validate:"required"`
 		RoomName       *string `json:"room_name" validate:"omitempty"`
 		RoomDesc       *string `json:"room_desc" validate:"omitempty"`
-		RoomTypeID     *int    `json:"room_type_id" validate:"omitempty"`
-		RoomLocationID *int    `json:"room_location_id" validate:"omitempty"`
+		RoomTypeID     *uint   `json:"room_type_id" validate:"omitempty"`
+		RoomLocationID *uint   `json:"room_location_id" validate:"omitempty"`
 	}
 	RoomsResponse struct {
 		ID       uint   `json:"id"`
