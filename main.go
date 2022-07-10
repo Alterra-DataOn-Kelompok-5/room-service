@@ -1,56 +1,73 @@
 package main
 
 import (
-	"log"
+	"flag"
 	"os"
 
 	"github.com/Alterra-DataOn-Kelompok-5/room-service/database"
 	"github.com/Alterra-DataOn-Kelompok-5/room-service/database/migration"
-	"github.com/Alterra-DataOn-Kelompok-5/room-service/middleware"
-
-	_roomTypesHttp "github.com/Alterra-DataOn-Kelompok-5/room-service/room_types/delivery/http"
-	_roomTypesRepo "github.com/Alterra-DataOn-Kelompok-5/room-service/room_types/repository"
-	_roomTypesUc "github.com/Alterra-DataOn-Kelompok-5/room-service/room_types/usecase"
-
-	_roomLocationsHttp "github.com/Alterra-DataOn-Kelompok-5/room-service/room_locations/delivery/http"
-	_roomLocationsRepo "github.com/Alterra-DataOn-Kelompok-5/room-service/room_locations/repository"
-	_roomLocationsUc "github.com/Alterra-DataOn-Kelompok-5/room-service/room_locations/usecase"
-
-	_roomsHttp "github.com/Alterra-DataOn-Kelompok-5/room-service/rooms/delivery/http"
-	_roomsRepo "github.com/Alterra-DataOn-Kelompok-5/room-service/rooms/repository"
-	_roomsUc "github.com/Alterra-DataOn-Kelompok-5/room-service/rooms/usecase"
-
+	"github.com/Alterra-DataOn-Kelompok-5/room-service/database/seeder"
+	"github.com/Alterra-DataOn-Kelompok-5/room-service/internal/factory"
+	"github.com/Alterra-DataOn-Kelompok-5/room-service/internal/http"
+	"github.com/Alterra-DataOn-Kelompok-5/room-service/internal/middleware"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 )
 
 func init() {
-	errGoEnv := godotenv.Load()
-	if errGoEnv != nil {
-		// log.Fatal("Error loading .env file")
-		panic(errGoEnv)
+	if err := godotenv.Load(); err != nil {
+		panic(err)
 	}
+	database.GetConnection()
 }
 
 func main() {
 	database.CreateConnection()
-	migration.Migrate()
 
+	var m string // for check migration
+	var s string // for check seeder
+
+	flag.StringVar(
+		&m,
+		"m",
+		"none",
+		`this argument for check if user want to migrate table, rollback table, or status migration
+to use this flag:
+	use -m=migrate for migrate table
+	use -m=rollback for rollback table
+	use -m=status for get status migration`,
+	)
+
+	flag.StringVar(
+		&s,
+		"s",
+		"none",
+		`this argument for check if user want to seed table
+to use this flag:
+	use -s=all to seed all table`,
+	)
+
+	flag.Parse()
+
+	if m == "migrate" {
+		migration.Migrate()
+	} else if m == "rollback" {
+		migration.Rollback()
+	} else if m == "status" {
+		migration.Status()
+	}
+
+	if s == "all" {
+		seeder.NewSeeder().DeleteAll()
+		seeder.NewSeeder().SeedAll()
+	}
+
+	f := factory.NewFactory()
 	e := echo.New()
 
-	middleware.Init(e)
+	middleware.LogMiddlewares(e)
 
-	roomTypeRepo := _roomTypesRepo.NewMysqlRoomTypesRepository(database.GetConnection())
-	rtu := _roomTypesUc.NewRoomTypesUsecase(roomTypeRepo)
-	_roomTypesHttp.NewRoomTypesHandler(e, rtu)
+	http.NewHttp(e, f)
 
-	roomLocationRepo := _roomLocationsRepo.NewMysqlRoomLocationsRepository(database.GetConnection())
-	rlu := _roomLocationsUc.NewRoomLocationsUsecase(roomLocationRepo)
-	_roomLocationsHttp.NewRoomsHandler(e, rlu)
-
-	roomRepo := _roomsRepo.NewMysqlRoomsRepository(database.GetConnection())
-	ru := _roomsUc.NewRoomsUsecase(roomRepo, roomTypeRepo, roomLocationRepo)
-	_roomsHttp.NewRoomsHandler(e, ru)
-
-	log.Fatal(e.Start(":" + os.Getenv("SERVICE_PORT")))
+	e.Logger.Fatal(e.Start(":" + os.Getenv("APP_PORT")))
 }
