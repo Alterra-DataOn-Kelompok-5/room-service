@@ -13,8 +13,8 @@ type (
 	}
 	UpdateRoomLocationsRequestBody struct {
 		ID               *uint   `param:"id" validate:"required"`
-		RoomLocationName *string `json:"room_location_name" validate:"required"`
-		RoomLocationDesc *string `json:"room_location_desc" validate:"required"`
+		RoomLocationName *string `json:"room_location_name" validate:"omitempty"`
+		RoomLocationDesc *string `json:"room_location_desc" validate:"omitempty"`
 	}
 	RoomLocationsResponse struct {
 		ID               uint   `json:"id"`
