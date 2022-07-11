@@ -13,35 +13,36 @@ import (
 
 var (
 	ctx                 = context.Background()
-	divisionService     = NewService(factory.NewFactory())
+	locationService     = NewService(factory.NewFactory())
 	testFindAllPayload  = pkgdto.SearchGetRequest{}
 	testFindByIdPayload = pkgdto.ByIDRequest{ID: 1}
 )
 
-func TestDivisionServiceFindAllSuccess(t *testing.T) {
+func TestLocationServiceFindAllSuccess(t *testing.T) {
 	database.GetConnection()
 	seeder.NewSeeder().DeleteAll()
 	seeder.NewSeeder().SeedAll()
 
 	asserts := assert.New(t)
-	res, err := divisionService.Find(ctx, &testFindAllPayload)
+	res, err := locationService.Find(ctx, &testFindAllPayload)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	asserts.Len(res.Data, 3)
 	for _, val := range res.Data {
-		asserts.NotEmpty(val.Name)
 		asserts.NotEmpty(val.ID)
+		asserts.NotEmpty(val.RoomLocationName)
+		asserts.NotEmpty(val.RoomLocationDesc)
 	}
 }
-func TestDivisionServiceFindByIdSuccess(t *testing.T) {
+func TestLocationServiceFindByIdSuccess(t *testing.T) {
 	database.GetConnection()
 	seeder.NewSeeder().DeleteAll()
 	seeder.NewSeeder().SeedAll()
 
 	asserts := assert.New(t)
-	res, err := divisionService.FindByID(ctx, &testFindByIdPayload)
+	res, err := locationService.FindByID(ctx, &testFindByIdPayload)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,85 +50,86 @@ func TestDivisionServiceFindByIdSuccess(t *testing.T) {
 	asserts.Equal(uint(1), res.ID)
 }
 
-func TestDivisionServiceFindByIdRecordNotFound(t *testing.T) {
+func TestLocationServiceFindByIdRecordNotFound(t *testing.T) {
 	database.GetConnection()
 	seeder.NewSeeder().DeleteAll()
 
 	asserts := assert.New(t)
-	_, err := divisionService.FindByID(ctx, &testFindByIdPayload)
+	_, err := locationService.FindByID(ctx, &testFindByIdPayload)
 	if err != nil {
 		asserts.Equal(err.Error(), "error code 404")
 	}
 }
 
-func TestDivisionServiceUpdataByIdSuccess(t *testing.T) {
+func TestLocationServiceUpdateByIdSuccess(t *testing.T) {
 	database.GetConnection()
 	seeder.NewSeeder().DeleteAll()
 	seeder.NewSeeder().SeedAll()
 
 	asserts := assert.New(t)
-	res, err := divisionService.UpdateById(ctx, &testUpdatePayload)
+	res, err := locationService.UpdateById(ctx, &testUpdatePayload)
 	if err != nil {
 		t.Fatal(err)
 	}
-	asserts.Equal(testDivisionName, res.Name)
+	asserts.Equal(testUpdateRoomLocationDesc, res.RoomLocationDesc)
 }
 
-func TestDivisionServiceUpdateByIdRecordNotFound(t *testing.T) {
+func TestLocationServiceUpdateByIdRecordNotFound(t *testing.T) {
 	database.GetConnection()
 	seeder.NewSeeder().DeleteAll()
 
 	asserts := assert.New(t)
-	_, err := divisionService.UpdateById(ctx, &testUpdatePayload)
+	_, err := locationService.UpdateById(ctx, &testUpdatePayload)
 	if err != nil {
 		asserts.Equal(err.Error(), "error code 404")
 	}
 }
 
-func TestDivisionServiceDeleteByIdSuccess(t *testing.T) {
+func TestLocationServiceDeleteByIdSuccess(t *testing.T) {
 	database.GetConnection()
 	seeder.NewSeeder().DeleteAll()
 	seeder.NewSeeder().SeedAll()
 
 	asserts := assert.New(t)
-	res, err := divisionService.DeleteById(ctx, &testFindByIdPayload)
+	res, err := locationService.DeleteById(ctx, &testFindByIdPayload)
 	if err != nil {
 		t.Fatal(err)
 	}
 	asserts.NotNil(res.DeletedAt)
 }
 
-func TestDivisionServiceDeleteByIdRecordNotFound(t *testing.T) {
+func TestLocationServiceDeleteByIdRecordNotFound(t *testing.T) {
 	database.GetConnection()
 	seeder.NewSeeder().DeleteAll()
 
 	asserts := assert.New(t)
-	_, err := divisionService.DeleteById(ctx, &testFindByIdPayload)
+	_, err := locationService.DeleteById(ctx, &testFindByIdPayload)
 	if asserts.Error(err) {
 		asserts.Equal(err.Error(), "error code 404")
 	}
 }
 
-func TestDivisionServiceCreateDivisionSuccess(t *testing.T) {
+func TestLocationServiceCreateLocationSuccess(t *testing.T) {
 	database.GetConnection()
 	seeder.NewSeeder().DeleteAll()
 
 	asserts := assert.New(t)
-	res, err := divisionService.Store(ctx, &testCreatePayload)
+	res, err := locationService.Store(ctx, &testCreatePayload)
 	if err != nil {
 		t.Fatal(err)
 	}
 	asserts.NotEmpty(res.ID)
-	asserts.Equal(*testCreatePayload.Name, res.Name)
+	asserts.Equal(*testCreatePayload.RoomLocationName, res.RoomLocationName)
+	asserts.Equal(*testCreatePayload.RoomLocationDesc, res.RoomLocationDesc)
 }
 
-func TestDivisionServiceCreateDivisionAlreadyExist(t *testing.T) {
+func TestLocationServiceCreateLocationAlreadyExist(t *testing.T) {
 	database.GetConnection()
 	seeder.NewSeeder().DeleteAll()
 	seeder.NewSeeder().SeedAll()
 
 	asserts := assert.New(t)
-	_, err := divisionService.Store(ctx, &testCreatePayload)
+	_, err := locationService.Store(ctx, &testCreatePayload)
 	if asserts.Error(err) {
 		asserts.Equal(err.Error(), "error code 409")
 	}

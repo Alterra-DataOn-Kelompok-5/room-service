@@ -38,7 +38,7 @@ func (r *roomLocation) FindAll(ctx context.Context, payload *pkgdto.SearchGetReq
 
 	if payload.Search != "" {
 		search := "%" + strings.ToLower(payload.Search) + "%"
-		query = query.Where("lower(room_location_name) LIKE ?", search, search)
+		query = query.Where("lower(room_location_name) LIKE ?", search)
 	}
 
 	countQuery := query
@@ -75,6 +75,9 @@ func (r *roomLocation) Save(ctx context.Context, roomLocation *dto.CreateRoomLoc
 func (r *roomLocation) Edit(ctx context.Context, oldRoomLocation *model.RoomLocations, updateData *dto.UpdateRoomLocationsRequestBody) (*model.RoomLocations, error) {
 	if updateData.RoomLocationName != nil {
 		oldRoomLocation.RoomLocationName = *updateData.RoomLocationName
+	}
+	
+	if updateData.RoomLocationDesc != nil {
 		oldRoomLocation.RoomLocationDesc = *updateData.RoomLocationDesc
 	}
 

@@ -21,56 +21,59 @@ import (
 )
 
 var (
-	adminClaims       = util.CreateJWTClaims(testEmail, testEmployeeID, testAdminRoleID, testDivisionID)
-	db                = database.GetConnection()
-	divisionHandler   = NewHandler(&f)
-	echoMock          = mocks.EchoMock{E: echo.New()}
-	f                 = factory.Factory{DivisionRepository: repository.NewDivisionRepository(db)}
-	testAdminRoleID   = uint(enum.Admin)
-	testCreatePayload = dto.CreateDivisionRequestBody{Name: &testDivisionName}
-	testDivisionID    = uint(enum.Finance)
-	testDivisionName  = enum.Division(testDivisionID).String()
-	testEmail         = "vincentlhubbard@superrito.com"
-	testEmployeeID    = uint(1)
-	testUpdatePayload = dto.UpdateDivisionRequestBody{ID: &testDivisionID, Name: &testDivisionName}
-	testUserRoleID    = uint(enum.User)
-	userClaims        = util.CreateJWTClaims(testEmail, testEmployeeID, testUserRoleID, testDivisionID)
+	adminClaims                = util.CreateJWTClaims(testEmail, testEmployeeID, testAdminRoleID, testDivisionID)
+	db                         = database.GetConnection()
+	echoMock                   = mocks.EchoMock{E: echo.New()}
+	f                          = factory.Factory{RoomLocationsRepository: repository.NewRoomLocationsRepository(db)}
+	locationHandler            = NewHandler(&f)
+	testAdminRoleID            = uint(enum.Admin)
+	testCreatePayload          = dto.CreateRoomLocationsRequestBody{RoomLocationName: &testRoomLocationName, RoomLocationDesc: &testRoomLocationDesc}
+	testDivisionID             = uint(enum.Finance)
+	testEmail                  = "vincentlhubbard@superrito.com"
+	testEmployeeID             = uint(1)
+	testRoomLocationDesc       = "Lantai 1"
+	testRoomLocationID         = uint(1)
+	testRoomLocationName       = "1F"
+	testUpdatePayload          = dto.UpdateRoomLocationsRequestBody{ID: &testRoomLocationID, RoomLocationDesc: &testUpdateRoomLocationDesc}
+	testUpdateRoomLocationDesc = "Lantai 1 bagian kanan gedung"
+	testUserRoleID             = uint(enum.User)
+	userClaims                 = util.CreateJWTClaims(testEmail, testEmployeeID, testUserRoleID, testDivisionID)
 )
 
-func TestDivisionHandlerGetInvalidPayload(t *testing.T) {
+func TestLocationHandlerGetInvalidPayload(t *testing.T) {
 	c, rec := echoMock.RequestMock(http.MethodGet, "/", nil)
 	token, err := util.CreateJWTToken(adminClaims)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	c.SetPath("/api/v1/divisions")
+	c.SetPath("/api/v1/locations")
 	c.QueryParams().Add("page", "a")
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(divisionHandler.Get(c)) {
+	if asserts.NoError(locationHandler.Get(c)) {
 		asserts.Equal(400, rec.Code)
 
 		body := rec.Body.String()
 		asserts.Contains(body, "Bad Request")
 	}
 }
-func TestDivisionHandlerGetUnauthorized(t *testing.T) {
+func TestLocationHandlerGetUnauthorized(t *testing.T) {
 	c, rec := echoMock.RequestMock(http.MethodGet, "/", nil)
-	c.SetPath("/api/v1/divisions")
+	c.SetPath("/api/v1/locations")
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(divisionHandler.Get(c)) {
+	if asserts.NoError(locationHandler.Get(c)) {
 		asserts.Equal(401, rec.Code)
 		body := rec.Body.String()
 		asserts.Contains(body, "unauthorized")
 	}
 }
 
-func TestDivisionHandlerGetSuccess(t *testing.T) {
+func TestLocationHandlerGetSuccess(t *testing.T) {
 	c, rec := echoMock.RequestMock(http.MethodGet, "/", nil)
 	token, err := util.CreateJWTToken(adminClaims)
 	if err != nil {
@@ -79,37 +82,38 @@ func TestDivisionHandlerGetSuccess(t *testing.T) {
 	seeder.NewSeeder().DeleteAll()
 	seeder.NewSeeder().SeedAll()
 
-	c.SetPath("/api/v1/divisions")
+	c.SetPath("/api/v1/locations")
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(divisionHandler.Get(c)) {
+	if asserts.NoError(locationHandler.Get(c)) {
 		asserts.Equal(200, rec.Code)
 
 		body := rec.Body.String()
 		asserts.Contains(body, "id")
-		asserts.Contains(body, "name")
+		asserts.Contains(body, "room_location_name")
+		asserts.Contains(body, "room_location_desc")
 	}
 }
 
-func TestDivisionHandlerGetByIdInvalidPayload(t *testing.T) {
+func TestLocationHandlerGetByIdInvalidPayload(t *testing.T) {
 	c, rec := echoMock.RequestMock(http.MethodGet, "/", nil)
-	divisionID := "a"
+	roomLocationID := "a"
 
 	token, err := util.CreateJWTToken(adminClaims)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	c.SetPath("/api/v1/divisions")
+	c.SetPath("/api/v1/locations")
 	c.SetParamNames("id")
-	c.SetParamValues(divisionID)
+	c.SetParamValues(roomLocationID)
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(divisionHandler.GetById(c)) {
+	if asserts.NoError(locationHandler.GetById(c)) {
 		asserts.Equal(400, rec.Code)
 
 		body := rec.Body.String()
@@ -117,24 +121,24 @@ func TestDivisionHandlerGetByIdInvalidPayload(t *testing.T) {
 	}
 }
 
-func TestDivisionHandlerGetByIdNotFound(t *testing.T) {
+func TestLocationHandlerGetByIdNotFound(t *testing.T) {
 	seeder.NewSeeder().DeleteAll()
 
 	c, rec := echoMock.RequestMock(http.MethodGet, "/", nil)
-	divisionID := strconv.Itoa(int(testDivisionID))
+	roomLocationID := strconv.Itoa(int(testRoomLocationID))
 	token, err := util.CreateJWTToken(adminClaims)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	c.SetPath("/api/v1/divisions")
+	c.SetPath("/api/v1/locations")
 	c.SetParamNames("id")
-	c.SetParamValues(divisionID)
+	c.SetParamValues(roomLocationID)
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(divisionHandler.GetById(c)) {
+	if asserts.NoError(locationHandler.GetById(c)) {
 		asserts.Equal(404, rec.Code)
 
 		body := rec.Body.String()
@@ -142,68 +146,69 @@ func TestDivisionHandlerGetByIdNotFound(t *testing.T) {
 	}
 }
 
-func TestDivisionHandlerGetByIdUnauthorized(t *testing.T) {
+func TestLocationHandlerGetByIdUnauthorized(t *testing.T) {
 	seeder.NewSeeder().DeleteAll()
 
 	c, rec := echoMock.RequestMock(http.MethodGet, "/", nil)
-	divisionID := strconv.Itoa(int(testDivisionID))
+	roomLocationID := strconv.Itoa(int(testRoomLocationID))
 
-	c.SetPath("/api/v1/divisions")
+	c.SetPath("/api/v1/locations")
 	c.SetParamNames("id")
-	c.SetParamValues(divisionID)
+	c.SetParamValues(roomLocationID)
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(divisionHandler.GetById(c)) {
+	if asserts.NoError(locationHandler.GetById(c)) {
 		asserts.Equal(401, rec.Code)
 		body := rec.Body.String()
 		asserts.Contains(body, "unauthorized")
 	}
 }
 
-func TestDivisionHandlerGetByIdSuccess(t *testing.T) {
+func TestLocationHandlerGetByIdSuccess(t *testing.T) {
 	seeder.NewSeeder().DeleteAll()
 	seeder.NewSeeder().SeedAll()
 
 	c, rec := echoMock.RequestMock(http.MethodGet, "/", nil)
-	divisionID := strconv.Itoa(int(testDivisionID))
+	roomLocationID := strconv.Itoa(int(testRoomLocationID))
 	token, err := util.CreateJWTToken(adminClaims)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	c.SetPath("/api/v1/divisions")
+	c.SetPath("/api/v1/locations")
 	c.SetParamNames("id")
-	c.SetParamValues(divisionID)
+	c.SetParamValues(roomLocationID)
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(divisionHandler.GetById(c)) {
+	if asserts.NoError(locationHandler.GetById(c)) {
 		asserts.Equal(200, rec.Code)
 
 		body := rec.Body.String()
 		asserts.Contains(body, "id")
-		asserts.Contains(body, "name")
+		asserts.Contains(body, "room_location_name")
+		asserts.Contains(body, "room_location_desc")
 	}
 }
 
-func TestDivisionHandlerUpdateByIdInvalidPayload(t *testing.T) {
+func TestLocationHandlerUpdateByIdInvalidPayload(t *testing.T) {
 	c, rec := echoMock.RequestMock(http.MethodPut, "/", nil)
-	divisionID := "a"
+	roomLocationID := "a"
 	token, err := util.CreateJWTToken(adminClaims)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	c.SetPath("/api/v1/divisions")
+	c.SetPath("/api/v1/locations")
 	c.SetParamNames("id")
-	c.SetParamValues(divisionID)
+	c.SetParamValues(roomLocationID)
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(divisionHandler.UpdateById(c)) {
+	if asserts.NoError(locationHandler.UpdateById(c)) {
 		asserts.Equal(400, rec.Code)
 
 		body := rec.Body.String()
@@ -211,7 +216,7 @@ func TestDivisionHandlerUpdateByIdInvalidPayload(t *testing.T) {
 	}
 }
 
-func TestDivisionHandlerUpdateByIdNotFound(t *testing.T) {
+func TestLocationHandlerUpdateByIdNotFound(t *testing.T) {
 	seeder.NewSeeder().DeleteAll()
 
 	payload, err := json.Marshal(testUpdatePayload)
@@ -219,36 +224,36 @@ func TestDivisionHandlerUpdateByIdNotFound(t *testing.T) {
 		t.Fatal(err)
 	}
 	c, rec := echoMock.RequestMock(http.MethodPut, "/", bytes.NewBuffer(payload))
-	divisionID := strconv.Itoa(int(testDivisionID))
+	roomLocationID := strconv.Itoa(int(testRoomLocationID))
 	token, err := util.CreateJWTToken(adminClaims)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	c.SetPath("/divisions")
+	c.SetPath("/api/v1/locations")
 	c.SetParamNames("id")
-	c.SetParamValues(divisionID)
+	c.SetParamValues(roomLocationID)
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	c.Request().Header.Set("Content-Type", "application/json")
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(divisionHandler.UpdateById(c)) {
+	if asserts.NoError(locationHandler.UpdateById(c)) {
 		asserts.Equal(404, rec.Code)
 
 		body := rec.Body.String()
 		asserts.Contains(body, "Data not found")
 	}
 }
-func TestDivisionHandlerUpdateByIdUnauthorized(t *testing.T) {
+func TestLocationHandlerUpdateByIdUnauthorized(t *testing.T) {
 	seeder.NewSeeder().DeleteAll()
 
 	c, rec := echoMock.RequestMock(http.MethodPut, "/", nil)
-	divisionID := strconv.Itoa(int(testDivisionID))
+	roomLocationID := strconv.Itoa(int(testRoomLocationID))
 
-	c.SetPath("/api/v1/divisions")
+	c.SetPath("/api/v1/locations")
 	c.SetParamNames("id")
-	c.SetParamValues(divisionID)
+	c.SetParamValues(roomLocationID)
 
 	token, err := util.CreateJWTToken(userClaims)
 	if err != nil {
@@ -258,14 +263,14 @@ func TestDivisionHandlerUpdateByIdUnauthorized(t *testing.T) {
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(divisionHandler.UpdateById(c)) {
+	if asserts.NoError(locationHandler.UpdateById(c)) {
 		asserts.Equal(401, rec.Code)
 		body := rec.Body.String()
 		asserts.Contains(body, "unauthorized")
 	}
 }
 
-func TestDivisionHandlerUpdateByIdSuccess(t *testing.T) {
+func TestLocationHandlerUpdateByIdSuccess(t *testing.T) {
 	seeder.NewSeeder().DeleteAll()
 	seeder.NewSeeder().SeedAll()
 
@@ -274,45 +279,46 @@ func TestDivisionHandlerUpdateByIdSuccess(t *testing.T) {
 		t.Fatal(err)
 	}
 	c, rec := echoMock.RequestMock(http.MethodPut, "/", bytes.NewBuffer(payload))
-	divisionID := strconv.Itoa(int(testDivisionID))
+	roomLocationID := strconv.Itoa(int(testRoomLocationID))
 	token, err := util.CreateJWTToken(adminClaims)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	c.SetPath("/divisions")
+	c.SetPath("/api/v1/locations")
 	c.SetParamNames("id")
-	c.SetParamValues(divisionID)
+	c.SetParamValues(roomLocationID)
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	c.Request().Header.Set("Content-Type", "application/json")
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(divisionHandler.UpdateById(c)) {
+	if asserts.NoError(locationHandler.UpdateById(c)) {
 		asserts.Equal(200, rec.Code)
 
 		body := rec.Body.String()
 		asserts.Contains(body, "id")
-		asserts.Contains(body, "name")
+		asserts.Contains(body, "room_location_name")
+		asserts.Contains(body, "room_location_desc")
 	}
 }
 
-func TestDivisionHandlerDeleteByIdInvalidPayload(t *testing.T) {
+func TestLocationHandlerDeleteByIdInvalidPayload(t *testing.T) {
 	c, rec := echoMock.RequestMock(http.MethodDelete, "/", nil)
-	divisionID := "a"
+	roomLocationID := "a"
 	token, err := util.CreateJWTToken(adminClaims)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	c.SetPath("/divisions")
+	c.SetPath("/api/v1/locations")
 	c.SetParamNames("id")
-	c.SetParamValues(divisionID)
+	c.SetParamValues(roomLocationID)
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(divisionHandler.DeleteById(c)) {
+	if asserts.NoError(locationHandler.DeleteById(c)) {
 		asserts.Equal(400, rec.Code)
 
 		body := rec.Body.String()
@@ -320,24 +326,24 @@ func TestDivisionHandlerDeleteByIdInvalidPayload(t *testing.T) {
 	}
 }
 
-func TestDivisionHandlerDeleteByIdNotFound(t *testing.T) {
+func TestLocationHandlerDeleteByIdNotFound(t *testing.T) {
 	seeder.NewSeeder().DeleteAll()
 
 	c, rec := echoMock.RequestMock(http.MethodDelete, "/", nil)
-	divisionID := strconv.Itoa(int(testDivisionID))
+	roomLocationID := strconv.Itoa(int(testRoomLocationID))
 	token, err := util.CreateJWTToken(adminClaims)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	c.SetPath("/divisions")
+	c.SetPath("/api/v1/locations")
 	c.SetParamNames("id")
-	c.SetParamValues(divisionID)
+	c.SetParamValues(roomLocationID)
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(divisionHandler.DeleteById(c)) {
+	if asserts.NoError(locationHandler.DeleteById(c)) {
 		asserts.Equal(404, rec.Code)
 
 		body := rec.Body.String()
@@ -345,15 +351,15 @@ func TestDivisionHandlerDeleteByIdNotFound(t *testing.T) {
 	}
 }
 
-func TestDivisionHandlerDeleteByIdUnauthorized(t *testing.T) {
+func TestLocationHandlerDeleteByIdUnauthorized(t *testing.T) {
 	seeder.NewSeeder().DeleteAll()
 
 	c, rec := echoMock.RequestMock(http.MethodDelete, "/", nil)
-	divisionID := strconv.Itoa(int(testDivisionID))
+	roomLocationID := strconv.Itoa(int(testRoomLocationID))
 
-	c.SetPath("/api/v1/divisions")
+	c.SetPath("/api/v1/locations")
 	c.SetParamNames("id")
-	c.SetParamValues(divisionID)
+	c.SetParamValues(roomLocationID)
 
 	token, err := util.CreateJWTToken(userClaims)
 	if err != nil {
@@ -363,60 +369,61 @@ func TestDivisionHandlerDeleteByIdUnauthorized(t *testing.T) {
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(divisionHandler.DeleteById(c)) {
+	if asserts.NoError(locationHandler.DeleteById(c)) {
 		asserts.Equal(401, rec.Code)
 		body := rec.Body.String()
 		asserts.Contains(body, "unauthorized")
 	}
 }
 
-func TestDivisionHandlerDeleteByIdSuccess(t *testing.T) {
+func TestLocationHandlerDeleteByIdSuccess(t *testing.T) {
 	seeder.NewSeeder().DeleteAll()
 	seeder.NewSeeder().SeedAll()
 
 	c, rec := echoMock.RequestMock(http.MethodDelete, "/", nil)
-	divisionID := strconv.Itoa(int(testDivisionID))
+	roomLocationID := strconv.Itoa(int(testRoomLocationID))
 	token, err := util.CreateJWTToken(adminClaims)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	c.SetPath("/divisions")
+	c.SetPath("/api/v1/locations")
 	c.SetParamNames("id")
-	c.SetParamValues(divisionID)
+	c.SetParamValues(roomLocationID)
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(divisionHandler.DeleteById(c)) {
+	if asserts.NoError(locationHandler.DeleteById(c)) {
 		asserts.Equal(200, rec.Code)
 
 		body := rec.Body.String()
 		asserts.Contains(body, "id")
-		asserts.Contains(body, "name")
+		asserts.Contains(body, "room_location_name")
+		asserts.Contains(body, "room_location_desc")
 		asserts.Contains(body, "deleted_at")
 	}
 }
 
-func TestDivisionHandlerCreateInvalidPayload(t *testing.T) {
+func TestLocationHandlerCreateInvalidPayload(t *testing.T) {
 	token, err := util.CreateJWTToken(adminClaims)
 	if err != nil {
 		t.Fatal(err)
 	}
-	payload, err := json.Marshal(dto.CreateDivisionRequestBody{})
+	payload, err := json.Marshal(dto.CreateRoomLocationsRequestBody{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	c, rec := echoMock.RequestMock(http.MethodPost, "/", bytes.NewBuffer(payload))
 
-	c.SetPath("/api/v1/divisions")
+	c.SetPath("/api/v1/locations")
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	c.Request().Header.Set("Content-Type", "application/json")
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(divisionHandler.Create(c)) {
+	if asserts.NoError(locationHandler.Create(c)) {
 		asserts.Equal(400, rec.Code)
 
 		body := rec.Body.String()
@@ -424,7 +431,7 @@ func TestDivisionHandlerCreateInvalidPayload(t *testing.T) {
 	}
 }
 
-func TestDivisionHandlerCreateDivisionAlreadyExist(t *testing.T) {
+func TestLocationHandlerCreateDivisionAlreadyExist(t *testing.T) {
 	seeder.NewSeeder().DeleteAll()
 	seeder.NewSeeder().SeedAll()
 
@@ -432,21 +439,20 @@ func TestDivisionHandlerCreateDivisionAlreadyExist(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	name := enum.Division(testDivisionID).String()
-	payload, err := json.Marshal(dto.CreateDivisionRequestBody{Name: &name})
+	payload, err := json.Marshal(dto.CreateRoomLocationsRequestBody{RoomLocationName: &testRoomLocationName, RoomLocationDesc: &testRoomLocationDesc})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	c, rec := echoMock.RequestMock(http.MethodPost, "/", bytes.NewBuffer(payload))
 
-	c.SetPath("/api/v1/divisions")
+	c.SetPath("/api/v1/locations")
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	c.Request().Header.Set("Content-Type", "application/json")
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(divisionHandler.Create(c)) {
+	if asserts.NoError(locationHandler.Create(c)) {
 		asserts.Equal(409, rec.Code)
 
 		body := rec.Body.String()
@@ -454,7 +460,7 @@ func TestDivisionHandlerCreateDivisionAlreadyExist(t *testing.T) {
 	}
 }
 
-func TestDivisionHandlerCreateUnauthorized(t *testing.T) {
+func TestLocationHandlerCreateUnauthorized(t *testing.T) {
 	payload, err := json.Marshal(testCreatePayload)
 	if err != nil {
 		t.Fatal(err)
@@ -462,7 +468,7 @@ func TestDivisionHandlerCreateUnauthorized(t *testing.T) {
 
 	c, rec := echoMock.RequestMock(http.MethodPost, "/", bytes.NewBuffer(payload))
 
-	c.SetPath("/api/v1/divisions")
+	c.SetPath("/api/v1/locations")
 	c.Request().Header.Set("Content-Type", "application/json")
 
 	token, err := util.CreateJWTToken(userClaims)
@@ -473,7 +479,7 @@ func TestDivisionHandlerCreateUnauthorized(t *testing.T) {
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(divisionHandler.Create(c)) {
+	if asserts.NoError(locationHandler.Create(c)) {
 		asserts.Equal(401, rec.Code)
 
 		body := rec.Body.String()
@@ -481,7 +487,7 @@ func TestDivisionHandlerCreateUnauthorized(t *testing.T) {
 	}
 }
 
-func TestDivisionHandlerCreateSuccess(t *testing.T) {
+func TestLocationHandlerCreateSuccess(t *testing.T) {
 	seeder.NewSeeder().DeleteAll()
 
 	token, err := util.CreateJWTToken(adminClaims)
@@ -495,17 +501,18 @@ func TestDivisionHandlerCreateSuccess(t *testing.T) {
 
 	c, rec := echoMock.RequestMock(http.MethodPost, "/", bytes.NewBuffer(payload))
 
-	c.SetPath("/api/v1/divisions")
+	c.SetPath("/api/v1/locations")
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	c.Request().Header.Set("Content-Type", "application/json")
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(divisionHandler.Create(c)) {
+	if asserts.NoError(locationHandler.Create(c)) {
 		asserts.Equal(200, rec.Code)
 
 		body := rec.Body.String()
 		asserts.Contains(body, "id")
-		asserts.Contains(body, "name")
+		asserts.Contains(body, "room_location_name")
+		asserts.Contains(body, "room_location_desc")
 	}
 }
