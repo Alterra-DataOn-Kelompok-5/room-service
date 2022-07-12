@@ -63,13 +63,8 @@ func TestRoomTypeHandlerGetInvalidPayload(t *testing.T) {
 }
 
 func TestRoomTypeHandlerGetUnauthorized(t *testing.T) {
-	token, err := util.CreateJWTToken(userClaims)
-	if err != nil {
-		t.Fatal(err)
-	}
 	c, rec := echoMock.RequestMock(http.MethodGet, "/", nil)
 	c.SetPath("/api/v1/types")
-	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	// testing
 	asserts := assert.New(t)
@@ -155,15 +150,15 @@ func TestRoomTypeHandlerGetByIdNotFound(t *testing.T) {
 }
 
 func TestRoomTypeHandlerGetByIdUnauthorized(t *testing.T) {
-	token, err := util.CreateJWTToken(userClaims)
-	if err != nil {
-		t.Fatal(err)
-	}
+	// token, err := util.CreateJWTToken(userClaims)
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
 	c, rec := echoMock.RequestMock(http.MethodGet, "/", nil)
 	c.SetPath("/api/v1/types")
 	c.SetParamNames("id")
 	c.SetParamValues(strconv.Itoa(int(testAdminRoleID)))
-	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	// c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	// testing
 	asserts := assert.New(t)
