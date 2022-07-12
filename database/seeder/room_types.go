@@ -39,7 +39,7 @@ func roomTypesSeeder(db *gorm.DB) {
 			},
 			RoomTypeName:        "Large Meeting Room",
 			RoomTypeMaxCapacity: 20,
-			RoomTypeDesc:        "Ruang meeting besar dengan kapasitas 11-20 orang",
+			RoomTypeDesc:        "Ruang meeting kecil dengan kapasitas 11-20 orang",
 		},
 	}
 	if err := db.Create(&roomTypes).Error; err != nil {

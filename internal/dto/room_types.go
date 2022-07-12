@@ -14,9 +14,9 @@ type (
 	}
 	UpdateRoomTypesRequestBody struct {
 		ID                  *uint   `param:"id" validate:"required"`
-		RoomTypeName        *string `json:"room_type_name" validate:"omitempty"`
-		RoomTypeMaxCapacity *int    `json:"room_type_max_capacity" validate:"omitempty"`
-		RoomTypeDesc        *string `json:"room_type_desc" validate:"omitempty"`
+		RoomTypeName        *string `json:"room_type_name" validate:"required"`
+		RoomTypeMaxCapacity *int    `json:"room_type_max_capacity" validate:"required"`
+		RoomTypeDesc        *string `json:"room_type_desc" validate:"required"`
 	}
 	RoomTypesResponse struct {
 		ID                  uint   `json:"id"`
