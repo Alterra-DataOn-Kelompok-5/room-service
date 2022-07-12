@@ -76,7 +76,11 @@ func (r *roomTypes) Save(ctx context.Context, roomType *dto.CreateRoomTypesReque
 func (r *roomTypes) Edit(ctx context.Context, oldRoomTypes *model.RoomTypes, updateData *dto.UpdateRoomTypesRequestBody) (*model.RoomTypes, error) {
 	if updateData.RoomTypeName != nil {
 		oldRoomTypes.RoomTypeName = *updateData.RoomTypeName
+	}
+	if updateData.RoomTypeMaxCapacity != nil {
 		oldRoomTypes.RoomTypeMaxCapacity = *updateData.RoomTypeMaxCapacity
+	}
+	if updateData.RoomTypeDesc != nil {
 		oldRoomTypes.RoomTypeDesc = *updateData.RoomTypeDesc
 	}
 
