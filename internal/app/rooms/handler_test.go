@@ -21,36 +21,55 @@ import (
 )
 
 var (
-	adminClaims       = util.CreateJWTClaims(testEmail, testEmployeeID, testAdminRoleID, testDivisionID)
-	db                = database.GetConnection()
-	echoMock          = mocks.EchoMock{E: echo.New()}
-	f                 = factory.Factory{RoleRepository: repository.NewRoleRepository(db)}
-	roleHandler       = NewHandler(&f)
-	testAdminRoleID   = uint(enum.Admin)
-	testCreatePayload = dto.CreateRoleRequestBody{Name: &testRoleName}
-	testDivisionID    = uint(enum.Finance)
-	testEmail         = "vincentlhubbard@superrito.com"
-	testEmployeeID    = uint(1)
-	testRoleName      = "Admin"
-	testUpdatePayload = dto.UpdateRoleRequestBody{ID: &testAdminRoleID, Name: &testRoleName}
-	testUserRoleID    = uint(enum.User)
-	userClaims        = util.CreateJWTClaims(testEmail, testEmployeeID, testUserRoleID, testDivisionID)
+	adminClaims     = util.CreateJWTClaims(testEmail, testEmployeeID, testAdminRoleID, testDivisionID)
+	userClaims      = util.CreateJWTClaims(testEmail, testEmployeeID, testUserRoleID, testDivisionID)
+	testEmail       = "vincentlhubbard@superrito.com"
+	testEmployeeID  = uint(1)
+	testAdminRoleID = uint(enum.Admin)
+	testUserRoleID  = uint(2)
+	testDivisionID  = uint(enum.Finance)
+	db              = database.GetConnection()
+	echoMock        = mocks.EchoMock{E: echo.New()}
+	f               = factory.Factory{
+		RoomsRepository:         repository.NewRoomsRepository(db),
+		RoomTypesRepository:     repository.NewRoomTypesRepository(db),
+		RoomLocationsRepository: repository.NewRoomLocationsRepository(db),
+	}
+	roomHandler        = NewHandler(&f)
+	testRoomsID        = uint(1)
+	testRoomName       = "Tulip"
+	testRoomDesc       = "test room"
+	testRoomTypeID     = uint(1)
+	testRoomLocationID = uint(1)
+	testCreatePayload  = dto.CreateRoomsRequestBody{
+		RoomName:       &testRoomName,
+		RoomDesc:       &testRoomDesc,
+		RoomTypeID:     &testRoomTypeID,
+		RoomLocationID: &testRoomLocationID,
+	}
+	testUpdatePayload = dto.UpdateRoomsRequestBody{
+		ID:             &testRoomsID,
+		RoomName:       &testRoomName,
+		RoomDesc:       &testRoomDesc,
+		RoomTypeID:     &testRoomTypeID,
+		RoomLocationID: &testRoomLocationID,
+	}
 )
 
-func TestRoleHandlerGetInvalidPayload(t *testing.T) {
+func TestRoomsHandlerGetInvalidPayload(t *testing.T) {
 	c, rec := echoMock.RequestMock(http.MethodGet, "/", nil)
 	token, err := util.CreateJWTToken(adminClaims)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	c.SetPath("/api/v1/roles")
+	c.SetPath("/api/v1/rooms")
 	c.QueryParams().Add("page", "a")
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(roleHandler.Get(c)) {
+	if asserts.NoError(roomHandler.Get(c)) {
 		asserts.Equal(400, rec.Code)
 
 		body := rec.Body.String()
@@ -58,25 +77,20 @@ func TestRoleHandlerGetInvalidPayload(t *testing.T) {
 	}
 }
 
-func TestRoleHandlerGetUnauthorized(t *testing.T) {
-	token, err := util.CreateJWTToken(userClaims)
-	if err != nil {
-		t.Fatal(err)
-	}
+func TestRoomsHandlerGetUnauthorized(t *testing.T) {
 	c, rec := echoMock.RequestMock(http.MethodGet, "/", nil)
-	c.SetPath("/api/v1/roles")
-	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	c.SetPath("/api/v1/rooms")
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(roleHandler.Get(c)) {
+	if asserts.NoError(roomHandler.Get(c)) {
 		asserts.Equal(401, rec.Code)
 		body := rec.Body.String()
 		asserts.Contains(body, "unauthorized")
 	}
 }
 
-func TestRoleHandlerGetSuccess(t *testing.T) {
+func TestRoomsHandlerGetSuccess(t *testing.T) {
 	c, rec := echoMock.RequestMock(http.MethodGet, "/", nil)
 	token, err := util.CreateJWTToken(adminClaims)
 	if err != nil {
@@ -85,12 +99,12 @@ func TestRoleHandlerGetSuccess(t *testing.T) {
 	seeder.NewSeeder().DeleteAll()
 	seeder.NewSeeder().SeedAll()
 
-	c.SetPath("/api/v1/roles")
+	c.SetPath("/api/v1/rooms")
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(roleHandler.Get(c)) {
+	if asserts.NoError(roomHandler.Get(c)) {
 		asserts.Equal(200, rec.Code)
 
 		body := rec.Body.String()
@@ -99,23 +113,23 @@ func TestRoleHandlerGetSuccess(t *testing.T) {
 	}
 }
 
-func TestRoleHandlerGetByIdInvalidPayload(t *testing.T) {
+func TestRoomsHandlerGetByIdInvalidPayload(t *testing.T) {
 	c, rec := echoMock.RequestMock(http.MethodGet, "/", nil)
-	roleID := "a"
+	roomID := "a"
 
 	token, err := util.CreateJWTToken(adminClaims)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	c.SetPath("/api/v1/roles")
+	c.SetPath("/api/v1/rooms")
 	c.SetParamNames("id")
-	c.SetParamValues(roleID)
+	c.SetParamValues(roomID)
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(roleHandler.GetById(c)) {
+	if asserts.NoError(roomHandler.GetById(c)) {
 		asserts.Equal(400, rec.Code)
 
 		body := rec.Body.String()
@@ -123,24 +137,24 @@ func TestRoleHandlerGetByIdInvalidPayload(t *testing.T) {
 	}
 }
 
-func TestRoleHandlerGetByIdNotFound(t *testing.T) {
+func TestRoomsHandlerGetByIdNotFound(t *testing.T) {
 	seeder.NewSeeder().DeleteAll()
 
 	c, rec := echoMock.RequestMock(http.MethodGet, "/", nil)
-	roleID := strconv.Itoa(int(testAdminRoleID))
+	roomID := strconv.Itoa(int(testRoomsID))
 	token, err := util.CreateJWTToken(adminClaims)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	c.SetPath("/api/v1/roles")
+	c.SetPath("/api/v1/rooms")
 	c.SetParamNames("id")
-	c.SetParamValues(roleID)
+	c.SetParamValues(roomID)
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(roleHandler.GetById(c)) {
+	if asserts.NoError(roomHandler.GetById(c)) {
 		asserts.Equal(404, rec.Code)
 
 		body := rec.Body.String()
@@ -148,47 +162,41 @@ func TestRoleHandlerGetByIdNotFound(t *testing.T) {
 	}
 }
 
-func TestRoleHandlerGetByIdUnauthorized(t *testing.T) {
-	token, err := util.CreateJWTToken(userClaims)
-	if err != nil {
-		t.Fatal(err)
-	}
+func TestRoomsHandlerGetByIdUnauthorized(t *testing.T) {
 	c, rec := echoMock.RequestMock(http.MethodGet, "/", nil)
-	c.SetPath("/api/v1/roles")
-	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
-	c.SetPath("/api/v1/roles")
+	c.SetPath("/api/v1/rooms")
 	c.SetParamNames("id")
-	c.SetParamValues(strconv.Itoa(int(testAdminRoleID)))
+	c.SetParamValues(strconv.Itoa(int(testRoomsID)))
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(roleHandler.GetById(c)) {
+	if asserts.NoError(roomHandler.GetById(c)) {
 		asserts.Equal(401, rec.Code)
 		body := rec.Body.String()
 		asserts.Contains(body, "unauthorized")
 	}
 }
 
-func TestRoleHandlerGetByIdSuccess(t *testing.T) {
+func TestRoomsHandlerGetByIdSuccess(t *testing.T) {
 	seeder.NewSeeder().DeleteAll()
 	seeder.NewSeeder().SeedAll()
 
 	c, rec := echoMock.RequestMock(http.MethodGet, "/", nil)
-	roleID := strconv.Itoa(int(testAdminRoleID))
+	roomID := strconv.Itoa(int(testRoomsID))
 	token, err := util.CreateJWTToken(adminClaims)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	c.SetPath("/api/v1/roles")
+	c.SetPath("/api/v1/rooms")
 	c.SetParamNames("id")
-	c.SetParamValues(roleID)
+	c.SetParamValues(roomID)
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(roleHandler.GetById(c)) {
+	if asserts.NoError(roomHandler.GetById(c)) {
 		asserts.Equal(200, rec.Code)
 
 		body := rec.Body.String()
@@ -197,22 +205,22 @@ func TestRoleHandlerGetByIdSuccess(t *testing.T) {
 	}
 }
 
-func TestRoleHandlerUpdateByIdInvalidPayload(t *testing.T) {
+func TestRoomsHandlerUpdateByIdInvalidPayload(t *testing.T) {
 	c, rec := echoMock.RequestMock(http.MethodPut, "/", nil)
-	roleID := "a"
+	roomID := "a"
 	token, err := util.CreateJWTToken(adminClaims)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	c.SetPath("/api/v1/roles")
+	c.SetPath("/api/v1/rooms")
 	c.SetParamNames("id")
-	c.SetParamValues(roleID)
+	c.SetParamValues(roomID)
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(roleHandler.UpdateById(c)) {
+	if asserts.NoError(roomHandler.UpdateById(c)) {
 		asserts.Equal(400, rec.Code)
 
 		body := rec.Body.String()
@@ -220,7 +228,7 @@ func TestRoleHandlerUpdateByIdInvalidPayload(t *testing.T) {
 	}
 }
 
-func TestRoleHandlerUpdateByIdNotFound(t *testing.T) {
+func TestRoomsHandlerUpdateByIdNotFound(t *testing.T) {
 	seeder.NewSeeder().DeleteAll()
 
 	payload, err := json.Marshal(testUpdatePayload)
@@ -228,50 +236,61 @@ func TestRoleHandlerUpdateByIdNotFound(t *testing.T) {
 		t.Fatal(err)
 	}
 	c, rec := echoMock.RequestMock(http.MethodPut, "/", bytes.NewBuffer(payload))
-	roleID := strconv.Itoa(int(testAdminRoleID))
+	roomID := strconv.Itoa(int(testRoomsID))
 	token, err := util.CreateJWTToken(adminClaims)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	c.SetPath("/roles")
+	c.SetPath("/api/v1/rooms")
 	c.SetParamNames("id")
-	c.SetParamValues(roleID)
+	c.SetParamValues(roomID)
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	c.Request().Header.Set("Content-Type", "application/json")
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(roleHandler.UpdateById(c)) {
+	if asserts.NoError(roomHandler.UpdateById(c)) {
 		asserts.Equal(404, rec.Code)
 
 		body := rec.Body.String()
 		asserts.Contains(body, "Data not found")
 	}
 }
-func TestRoleHandlerUpdateByIdUnauthorized(t *testing.T) {
+func TestRoomsHandlerUpdateByIdUnauthorized(t *testing.T) {
+	seeder.NewSeeder().DeleteAll()
+	seeder.NewSeeder().SeedAll()
 	token, err := util.CreateJWTToken(userClaims)
 	if err != nil {
 		t.Fatal(err)
 	}
-	c, rec := echoMock.RequestMock(http.MethodGet, "/", nil)
-	c.SetPath("/api/v1/roles")
-	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
-	c.SetPath("/api/v1/roles")
+	fmt.Println(token)
+
+	payload, err := json.Marshal(testUpdatePayload)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c, rec := echoMock.RequestMock(http.MethodPut, "/", bytes.NewBuffer(payload))
+	roomID := strconv.Itoa(int(testRoomsID))
+
+	c.SetPath("/api/v1/rooms")
 	c.SetParamNames("id")
-	c.SetParamValues(strconv.Itoa(int(testAdminRoleID)))
+	c.SetParamValues(roomID)
+	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	c.Request().Header.Set("Content-Type", "application/json")
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(roleHandler.UpdateById(c)) {
+	if asserts.NoError(roomHandler.UpdateById(c)) {
 		asserts.Equal(401, rec.Code)
+
 		body := rec.Body.String()
 		asserts.Contains(body, "unauthorized")
 	}
 }
 
-func TestRoleHandlerUpdateByIdSuccess(t *testing.T) {
+func TestRoomsHandlerUpdateByIdSuccess(t *testing.T) {
 	seeder.NewSeeder().DeleteAll()
 	seeder.NewSeeder().SeedAll()
 
@@ -280,21 +299,21 @@ func TestRoleHandlerUpdateByIdSuccess(t *testing.T) {
 		t.Fatal(err)
 	}
 	c, rec := echoMock.RequestMock(http.MethodPut, "/", bytes.NewBuffer(payload))
-	roleID := strconv.Itoa(int(testAdminRoleID))
+	roomID := strconv.Itoa(int(testRoomsID))
 	token, err := util.CreateJWTToken(adminClaims)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	c.SetPath("/roles")
+	c.SetPath("/api/v1/rooms")
 	c.SetParamNames("id")
-	c.SetParamValues(roleID)
+	c.SetParamValues(roomID)
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	c.Request().Header.Set("Content-Type", "application/json")
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(roleHandler.UpdateById(c)) {
+	if asserts.NoError(roomHandler.UpdateById(c)) {
 		asserts.Equal(200, rec.Code)
 
 		body := rec.Body.String()
@@ -303,7 +322,7 @@ func TestRoleHandlerUpdateByIdSuccess(t *testing.T) {
 	}
 }
 
-func TestRoleHandlerDeleteByIdInvalidPayload(t *testing.T) {
+func TestRoomsHandlerDeleteByIdInvalidPayload(t *testing.T) {
 	c, rec := echoMock.RequestMock(http.MethodDelete, "/", nil)
 	roleID := "a"
 	token, err := util.CreateJWTToken(adminClaims)
@@ -311,14 +330,14 @@ func TestRoleHandlerDeleteByIdInvalidPayload(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	c.SetPath("/roles")
+	c.SetPath("/api/v1/rooms")
 	c.SetParamNames("id")
 	c.SetParamValues(roleID)
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(roleHandler.DeleteById(c)) {
+	if asserts.NoError(roomHandler.DeleteById(c)) {
 		asserts.Equal(400, rec.Code)
 
 		body := rec.Body.String()
@@ -326,7 +345,7 @@ func TestRoleHandlerDeleteByIdInvalidPayload(t *testing.T) {
 	}
 }
 
-func TestRoleHandlerDeleteByIdNotFound(t *testing.T) {
+func TestRoomsHandlerDeleteByIdNotFound(t *testing.T) {
 	seeder.NewSeeder().DeleteAll()
 
 	c, rec := echoMock.RequestMock(http.MethodDelete, "/", nil)
@@ -336,14 +355,14 @@ func TestRoleHandlerDeleteByIdNotFound(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	c.SetPath("/roles")
+	c.SetPath("/api/v1/rooms")
 	c.SetParamNames("id")
 	c.SetParamValues(roleID)
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(roleHandler.DeleteById(c)) {
+	if asserts.NoError(roomHandler.DeleteById(c)) {
 		asserts.Equal(404, rec.Code)
 
 		body := rec.Body.String()
@@ -351,7 +370,7 @@ func TestRoleHandlerDeleteByIdNotFound(t *testing.T) {
 	}
 }
 
-func TestRoleHandlerDeleteByIdUnauthorized(t *testing.T) {
+func TestRoomsHandlerDeleteByIdUnauthorized(t *testing.T) {
 	token, err := util.CreateJWTToken(userClaims)
 	if err != nil {
 		t.Fatal(err)
@@ -359,21 +378,21 @@ func TestRoleHandlerDeleteByIdUnauthorized(t *testing.T) {
 
 	c, rec := echoMock.RequestMock(http.MethodDelete, "/", nil)
 
-	c.SetPath("/api/v1/roles")
+	c.SetPath("/api/v1/rooms")
 	c.SetParamNames("id")
 	c.SetParamValues(strconv.Itoa(int(testAdminRoleID)))
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(roleHandler.DeleteById(c)) {
+	if asserts.NoError(roomHandler.DeleteById(c)) {
 		asserts.Equal(401, rec.Code)
 		body := rec.Body.String()
 		asserts.Contains(body, "unauthorized")
 	}
 }
 
-func TestRoleHandlerDeleteByIdSuccess(t *testing.T) {
+func TestRoomsHandlerDeleteByIdSuccess(t *testing.T) {
 	seeder.NewSeeder().DeleteAll()
 	seeder.NewSeeder().SeedAll()
 
@@ -384,14 +403,14 @@ func TestRoleHandlerDeleteByIdSuccess(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	c.SetPath("/roles")
+	c.SetPath("/api/v1/rooms")
 	c.SetParamNames("id")
 	c.SetParamValues(roleID)
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(roleHandler.DeleteById(c)) {
+	if asserts.NoError(roomHandler.DeleteById(c)) {
 		asserts.Equal(200, rec.Code)
 
 		body := rec.Body.String()
@@ -401,25 +420,25 @@ func TestRoleHandlerDeleteByIdSuccess(t *testing.T) {
 	}
 }
 
-func TestRoleHandlerCreateInvalidPayload(t *testing.T) {
+func TestRoomsHandlerCreateInvalidPayload(t *testing.T) {
 	token, err := util.CreateJWTToken(adminClaims)
 	if err != nil {
 		t.Fatal(err)
 	}
-	payload, err := json.Marshal(dto.CreateRoleRequestBody{})
+	payload, err := json.Marshal(dto.CreateRoomsRequestBody{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	c, rec := echoMock.RequestMock(http.MethodPost, "/", bytes.NewBuffer(payload))
 
-	c.SetPath("/api/v1/roles")
+	c.SetPath("/api/v1/rooms")
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	c.Request().Header.Set("Content-Type", "application/json")
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(roleHandler.Create(c)) {
+	if asserts.NoError(roomHandler.Create(c)) {
 		asserts.Equal(400, rec.Code)
 
 		body := rec.Body.String()
@@ -427,7 +446,7 @@ func TestRoleHandlerCreateInvalidPayload(t *testing.T) {
 	}
 }
 
-func TestRoleHandlerCreateRoleAlreadyExist(t *testing.T) {
+func TestRoomsHandlerCreateRoleAlreadyExist(t *testing.T) {
 	seeder.NewSeeder().DeleteAll()
 	seeder.NewSeeder().SeedAll()
 
@@ -435,21 +454,21 @@ func TestRoleHandlerCreateRoleAlreadyExist(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	name := enum.Role(testAdminRoleID).String()
-	payload, err := json.Marshal(dto.CreateRoleRequestBody{Name: &name})
+	name := "Melati"
+	payload, err := json.Marshal(dto.CreateRoomsRequestBody{RoomName: &name})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	c, rec := echoMock.RequestMock(http.MethodPost, "/", bytes.NewBuffer(payload))
 
-	c.SetPath("/api/v1/roles")
+	c.SetPath("/api/v1/rooms")
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	c.Request().Header.Set("Content-Type", "application/json")
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(roleHandler.Create(c)) {
+	if asserts.NoError(roomHandler.Create(c)) {
 		asserts.Equal(409, rec.Code)
 
 		body := rec.Body.String()
@@ -457,7 +476,7 @@ func TestRoleHandlerCreateRoleAlreadyExist(t *testing.T) {
 	}
 }
 
-func TestRoleHandlerCreateUnauthorized(t *testing.T) {
+func TestRoomsHandlerCreateUnauthorized(t *testing.T) {
 	token, err := util.CreateJWTToken(userClaims)
 	if err != nil {
 		t.Fatal(err)
@@ -469,13 +488,13 @@ func TestRoleHandlerCreateUnauthorized(t *testing.T) {
 
 	c, rec := echoMock.RequestMock(http.MethodPost, "/", bytes.NewBuffer(payload))
 
-	c.SetPath("/api/v1/roles")
+	c.SetPath("/api/v1/rooms")
 	c.Request().Header.Set("Content-Type", "application/json")
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(roleHandler.Create(c)) {
+	if asserts.NoError(roomHandler.Create(c)) {
 		asserts.Equal(401, rec.Code)
 
 		body := rec.Body.String()
@@ -483,8 +502,9 @@ func TestRoleHandlerCreateUnauthorized(t *testing.T) {
 	}
 }
 
-func TestRoleHandlerCreateSuccess(t *testing.T) {
+func TestRoomsHandlerCreateSuccess(t *testing.T) {
 	seeder.NewSeeder().DeleteAll()
+	seeder.NewSeeder().SeedAll()
 
 	token, err := util.CreateJWTToken(adminClaims)
 	if err != nil {
@@ -497,13 +517,13 @@ func TestRoleHandlerCreateSuccess(t *testing.T) {
 
 	c, rec := echoMock.RequestMock(http.MethodPost, "/", bytes.NewBuffer(payload))
 
-	c.SetPath("/api/v1/roles")
+	c.SetPath("/api/v1/rooms")
 	c.Request().Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	c.Request().Header.Set("Content-Type", "application/json")
 
 	// testing
 	asserts := assert.New(t)
-	if asserts.NoError(roleHandler.Create(c)) {
+	if asserts.NoError(roomHandler.Create(c)) {
 		asserts.Equal(200, rec.Code)
 
 		body := rec.Body.String()

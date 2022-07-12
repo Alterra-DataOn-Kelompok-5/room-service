@@ -108,9 +108,9 @@ func (h *handler) UpdateById(c echo.Context) error {
 	}
 	authHeader := c.Request().Header.Get("Authorization")
 	jwtClaims, err := util.ParseJWTToken(authHeader)
-	isAdminOrSameUser := (jwtClaims.UserID == *payload.ID) || (jwtClaims.RoleID == uint(enum.Admin))
+	// isAdminOrSameUser := (jwtClaims.UserID == *payload.ID) || (jwtClaims.RoleID == uint(enum.Admin))
 	// log.Println(isAdminOrSameUser)
-	if (err != nil) || !isAdminOrSameUser {
+	if (err != nil) || !(jwtClaims.RoleID == uint(enum.Admin)) {
 		return res.ErrorBuilder(&res.ErrorConstant.Unauthorized, err).Send(c)
 	}
 	result, err := h.service.UpdateById(c.Request().Context(), payload)

@@ -8,17 +8,16 @@ import (
 	"github.com/Alterra-DataOn-Kelompok-5/room-service/database/seeder"
 	"github.com/Alterra-DataOn-Kelompok-5/room-service/internal/dto"
 	"github.com/Alterra-DataOn-Kelompok-5/room-service/internal/factory"
-	"github.com/Alterra-DataOn-Kelompok-5/room-service/internal/pkg/enum"
 	pkgdto "github.com/Alterra-DataOn-Kelompok-5/room-service/pkg/dto"
 	"github.com/stretchr/testify/assert"
 )
 
 var (
 	ctx         = context.Background()
-	roleService = NewService(factory.NewFactory())
+	roomService = NewService(factory.NewFactory())
 )
 
-func TestRoleServiceFindAllSuccess(t *testing.T) {
+func TestRoomServiceFindAllSuccess(t *testing.T) {
 	database.GetConnection()
 	seeder.NewSeeder().DeleteAll()
 	seeder.NewSeeder().SeedAll()
@@ -28,18 +27,18 @@ func TestRoleServiceFindAllSuccess(t *testing.T) {
 		payload = pkgdto.SearchGetRequest{}
 	)
 
-	res, err := roleService.Find(ctx, &payload)
+	res, err := roomService.Find(ctx, &payload)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	asserts.Len(res.Data, 2)
+	asserts.Len(res.Data, 3)
 	for _, val := range res.Data {
-		asserts.NotEmpty(val.Name)
+		asserts.NotEmpty(val.RoomName)
 		asserts.NotEmpty(val.ID)
 	}
 }
-func TestRoleServiceFindByIdSuccess(t *testing.T) {
+func TestRoomServiceFindByIdSuccess(t *testing.T) {
 	database.GetConnection()
 	seeder.NewSeeder().DeleteAll()
 	seeder.NewSeeder().SeedAll()
@@ -49,7 +48,7 @@ func TestRoleServiceFindByIdSuccess(t *testing.T) {
 		payload = pkgdto.ByIDRequest{ID: 1}
 	)
 
-	res, err := roleService.FindByID(ctx, &payload)
+	res, err := roomService.FindByID(ctx, &payload)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +56,7 @@ func TestRoleServiceFindByIdSuccess(t *testing.T) {
 	asserts.Equal(uint(1), res.ID)
 }
 
-func TestRoleServiceFindByIdRecordNotFound(t *testing.T) {
+func TestRoomServiceFindByIdRecordNotFound(t *testing.T) {
 	database.GetConnection()
 	seeder.NewSeeder().DeleteAll()
 
@@ -66,54 +65,60 @@ func TestRoleServiceFindByIdRecordNotFound(t *testing.T) {
 		payload = pkgdto.ByIDRequest{ID: 1}
 	)
 
-	_, err := roleService.FindByID(ctx, &payload)
+	_, err := roomService.FindByID(ctx, &payload)
 	if err != nil {
 		asserts.Equal(err.Error(), "error code 404")
 	}
 }
 
-func TestRoleServiceUpdataByIdSuccess(t *testing.T) {
+func TestRoomServiceUpdataByIdSuccess(t *testing.T) {
 	database.GetConnection()
 	seeder.NewSeeder().DeleteAll()
 	seeder.NewSeeder().SeedAll()
 
 	var (
-		asserts = assert.New(t)
-		id      = uint(1)
-		name    = "Finance Dept."
-		payload = dto.UpdateRoleRequestBody{
-			ID:   &id,
-			Name: &name,
+		asserts    = assert.New(t)
+		id         = uint(1)
+		name       = "Tulip"
+		desc       = "test room tulip"
+		roomTypeID = uint(2)
+		roomLocID  = uint(2)
+		payload    = dto.UpdateRoomsRequestBody{
+			ID:             &id,
+			RoomName:       &name,
+			RoomDesc:       &desc,
+			RoomTypeID:     &roomTypeID,
+			RoomLocationID: &roomLocID,
 		}
 	)
-	res, err := roleService.UpdateById(ctx, &payload)
+	res, err := roomService.UpdateById(ctx, &payload)
 	if err != nil {
 		t.Fatal(err)
 	}
-	asserts.Equal(name, res.Name)
+	asserts.Equal(name, res.RoomName)
 }
 
-func TestRoleServiceUpdateByIdRecordNotFound(t *testing.T) {
+func TestRoomServiceUpdateByIdRecordNotFound(t *testing.T) {
 	database.GetConnection()
 	seeder.NewSeeder().DeleteAll()
 
 	var (
 		asserts = assert.New(t)
 		id      = uint(1)
-		name    = "Finance Dept."
-		payload = dto.UpdateRoleRequestBody{
-			ID:   &id,
-			Name: &name,
+		name    = "Tulips"
+		payload = dto.UpdateRoomsRequestBody{
+			ID:       &id,
+			RoomName: &name,
 		}
 	)
 
-	_, err := roleService.UpdateById(ctx, &payload)
+	_, err := roomService.UpdateById(ctx, &payload)
 	if err != nil {
 		asserts.Equal(err.Error(), "error code 404")
 	}
 }
 
-func TestRoleServiceDeleteByIdSuccess(t *testing.T) {
+func TestRoomServiceDeleteByIdSuccess(t *testing.T) {
 	database.GetConnection()
 	seeder.NewSeeder().DeleteAll()
 	seeder.NewSeeder().SeedAll()
@@ -124,14 +129,14 @@ func TestRoleServiceDeleteByIdSuccess(t *testing.T) {
 		payload = pkgdto.ByIDRequest{ID: id}
 	)
 
-	res, err := roleService.DeleteById(ctx, &payload)
+	res, err := roomService.DeleteById(ctx, &payload)
 	if err != nil {
 		t.Fatal(err)
 	}
 	asserts.NotNil(res.DeletedAt)
 }
 
-func TestRoleServiceDeleteByIdRecordNotFound(t *testing.T) {
+func TestRoomServiceDeleteByIdRecordNotFound(t *testing.T) {
 	database.GetConnection()
 	seeder.NewSeeder().DeleteAll()
 
@@ -141,46 +146,50 @@ func TestRoleServiceDeleteByIdRecordNotFound(t *testing.T) {
 		payload = pkgdto.ByIDRequest{ID: id}
 	)
 
-	_, err := roleService.DeleteById(ctx, &payload)
+	_, err := roomService.DeleteById(ctx, &payload)
 	if asserts.Error(err) {
 		asserts.Equal(err.Error(), "error code 404")
 	}
 }
 
-func TestRoleServiceCreateRoleSuccess(t *testing.T) {
-	database.GetConnection()
-	seeder.NewSeeder().DeleteAll()
-
-	var (
-		asserts = assert.New(t)
-		name    = "Finance Dept."
-		payload = dto.CreateRoleRequestBody{
-			Name: &name,
-		}
-	)
-
-	res, err := roleService.Store(ctx, &payload)
-	if err != nil {
-		t.Fatal(err)
-	}
-	asserts.NotEmpty(res.ID)
-	asserts.Equal(*payload.Name, res.Name)
-}
-
-func TestRoleServiceCreateRoleAlreadyExist(t *testing.T) {
+func TestRoomServiceCreateRoomSuccess(t *testing.T) {
 	database.GetConnection()
 	seeder.NewSeeder().DeleteAll()
 	seeder.NewSeeder().SeedAll()
 
 	var (
 		asserts = assert.New(t)
-		name    = enum.Role(testAdminRoleID).String()
-		payload = dto.CreateRoleRequestBody{
-			Name: &name,
+		name    = "Mawar"
+		payload = dto.CreateRoomsRequestBody{
+			RoomName:       &name,
+			RoomDesc:       &testRoomDesc,
+			RoomTypeID:     &testRoomTypeID,
+			RoomLocationID: &testRoomLocationID,
 		}
 	)
 
-	_, err := roleService.Store(ctx, &payload)
+	res, err := roomService.Store(ctx, &payload)
+	if err != nil {
+		t.Fatal(err)
+	}
+	asserts.NotEmpty(res.ID)
+	asserts.Equal(*payload.RoomName, res.RoomName)
+}
+
+func TestRoomServiceCreateRoomAlreadyExist(t *testing.T) {
+	database.GetConnection()
+	seeder.NewSeeder().DeleteAll()
+	seeder.NewSeeder().SeedAll()
+
+	var (
+		asserts = assert.New(t)
+		name    = "Melati"
+		payload = dto.CreateRoomsRequestBody{
+			RoomName: &name,
+		}
+	)
+
+	_, err := roomService.Store(ctx, &payload)
 	if asserts.Error(err) {
 		asserts.Equal(err.Error(), "error code 409")
 	}
