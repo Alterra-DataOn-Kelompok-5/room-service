@@ -24,8 +24,8 @@ func NewHandler(f *factory.Factory) *handler {
 
 func (h *handler) Get(c echo.Context) error {
 	authHeader := c.Request().Header.Get("Authorization")
-	jwtClaims, err := util.ParseJWTToken(authHeader)
-	if (err != nil) || (jwtClaims.RoleID != uint(enum.Admin)) {
+	_, err := util.ParseJWTToken(authHeader)
+	if err != nil {
 		return res.ErrorBuilder(&res.ErrorConstant.Unauthorized, err).Send(c)
 	}
 
@@ -50,8 +50,8 @@ func (h *handler) Get(c echo.Context) error {
 
 func (h *handler) GetById(c echo.Context) error {
 	authHeader := c.Request().Header.Get("Authorization")
-	jwtClaims, err := util.ParseJWTToken(authHeader)
-	if (err != nil) || (jwtClaims.RoleID != uint(enum.Admin)) {
+	_, err := util.ParseJWTToken(authHeader)
+	if err != nil {
 		return res.ErrorBuilder(&res.ErrorConstant.Unauthorized, err).Send(c)
 	}
 
