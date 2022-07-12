@@ -29,7 +29,7 @@ func TestRoomTypeServiceFindAllSuccess(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	asserts.Len(res.Data, 2)
+	asserts.Len(res.Data, 3)
 	for _, val := range res.Data {
 		asserts.NotEmpty(val.RoomTypeName)
 		asserts.NotEmpty(val.RoomTypeDesc)

@@ -101,7 +101,7 @@ func TestRoomTypeHandlerGetSuccess(t *testing.T) {
 		asserts.Contains(body, "id")
 		asserts.Contains(body, "room_type_name")
 		asserts.Contains(body, "room_type_desc")
-		asserts.Contains(body, "room_type_capacity")
+		asserts.Contains(body, "room_type_max_capacity")
 	}
 }
 
@@ -199,7 +199,7 @@ func TestRoomTypeHandlerGetByIdSuccess(t *testing.T) {
 		asserts.Contains(body, "id")
 		asserts.Contains(body, "room_type_name")
 		asserts.Contains(body, "room_type_desc")
-		asserts.Contains(body, "room_type_capacity")
+		asserts.Contains(body, "room_type_max_capacity")
 	}
 }
 
@@ -305,7 +305,7 @@ func TestRoomTypeHandlerUpdateByIdSuccess(t *testing.T) {
 		asserts.Contains(body, "id")
 		asserts.Contains(body, "room_type_name")
 		asserts.Contains(body, "room_type_desc")
-		asserts.Contains(body, "room_type_capacity")
+		asserts.Contains(body, "room_type_max_capacity")
 	}
 }
 
@@ -404,7 +404,7 @@ func TestRoomTypeHandlerDeleteByIdSuccess(t *testing.T) {
 		asserts.Contains(body, "id")
 		asserts.Contains(body, "room_type_name")
 		asserts.Contains(body, "room_type_desc")
-		asserts.Contains(body, "room_type_capacity")
+		asserts.Contains(body, "room_type_max_capacity")
 		asserts.Contains(body, "deleted_at")
 	}
 }
@@ -435,7 +435,7 @@ func TestRoomTypeHandlerCreateInvalidPayload(t *testing.T) {
 	}
 }
 
-func TestRoomTypeHandlerCreateRoleAlreadyExist(t *testing.T) {
+func TestRoomTypeHandlerCreateAlreadyExist(t *testing.T) {
 	seeder.NewSeeder().DeleteAll()
 	seeder.NewSeeder().SeedAll()
 
@@ -517,6 +517,6 @@ func TestRoomTypeHandlerCreateSuccess(t *testing.T) {
 		asserts.Contains(body, "id")
 		asserts.Contains(body, "room_type_name")
 		asserts.Contains(body, "room_type_desc")
-		asserts.Contains(body, "room_type_capacity")
+		asserts.Contains(body, "room_type_max_capacity")
 	}
 }
